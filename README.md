@@ -26,6 +26,113 @@ A comunicação é sempre **JSON** (sem XML) e os pacientes são identificados p
 
 ---
 
+## Partes de cada um, como funciona e como se relacionam
+
+A implementação foi dividida em módulos independentes. Pense como peças de Lego: cada pessoa constrói a sua peça em casa e depois todas se encaixam para formar o sistema completo.
+
+---
+
+### **Pamela — Cliente/Site (CRUDEPatients)**
+
+**O que faz:**  
+É a parte que o usuário vê no navegador. Tem formulário, botões e tabela para interagir com os pacientes.
+
+**Como se relaciona com o resto:**  
+- O usuário preenche os dados do paciente no site.  
+- O site transforma esses dados em um JSON no padrão Patient.  
+- O site envia esse JSON para o servidor pedindo: criar / editar / buscar / deletar.  
+- Depois mostra a resposta do servidor na tela (lista atualizada, mensagens de erro etc.).
+
+**Em resumo:**  
+Pamela é o **“controle remoto”** do sistema.
+
+---
+
+### **Henrique — Servidor/Rotas (PatientsOnFIRE)**
+
+**O que faz:**  
+É o “atendente da central”. Ele recebe todas as requisições vindas do site (POST, GET, PUT, DELETE) e coordena o que deve acontecer.
+
+**Como se relaciona com o resto:**  
+- Recebe pedidos vindos do cliente da Pamela.  
+- **Antes de salvar ou atualizar**, manda os dados para a Emilie validar.  
+- Se a Emilie aprovar, manda para a Homrich guardar/atualizar.  
+- Devolve o resultado final para o cliente.
+
+**Em resumo:**  
+Henrique é quem **organiza o fluxo** e garante que a API siga as regras do trabalho.
+
+---
+
+### **Emilie — Validador/Modelo Patient (FHIR mínimo)**
+
+**O que faz:**  
+É a “portaria/checagem de qualidade”. Garante que o paciente enviado está no formato certo e com os campos mínimos obrigatórios.
+
+**Como se relaciona com o resto:**  
+- Henrique manda o JSON do paciente para validação.  
+- Emilie verifica se:  
+  - é realmente um `Patient`;  
+  - tem nome, gênero e data de nascimento;  
+  - no PUT, o `identifier` combina com o ID da URL.  
+- Se estiver ok → devolve “pode passar” (com JSON ajustado/normalizado).  
+- Se não estiver ok → devolve erro (400 ou 422).
+
+**Em resumo:**  
+Emilie decide se o paciente **entra no sistema** ou é **barrado**.
+
+---
+
+### **Mariana Homrich — Repositório/Persistência + Helpers de Erro**
+
+**O que faz:**  
+É a parte que **guarda os pacientes de verdade**, como um mini-banco de dados simples (em memória e/ou arquivo).  
+Também cria um helper para padronizar respostas de erro.
+
+**Como se relaciona com o resto:**  
+- Só recebe pacientes quando Emilie aprovou.  
+- Henrique pede para ela:  
+  - salvar novo paciente (POST),  
+  - buscar paciente (GET),  
+  - atualizar (PUT),  
+  - deletar (DELETE),  
+  - listar IDs (PatientIDs).  
+- Ela devolve os dados para o Henrique responder ao cliente.
+
+**Em resumo:**  
+Homrich é o **“arquivo/banco”** do sistema.
+
+---
+
+### **Mariana Luísa — Testes + Integração**
+
+**O que faz:**  
+É quem confirma se tudo está certo. Cria testes (Postman ou automáticos) simulando o uso real.
+
+**Como se relaciona com o resto:**  
+- Testa o servidor do Henrique com vários casos.  
+- Confere se Emilie barra o que deve barrar.  
+- Confere se Homrich guarda e devolve direitinho.  
+- Confere se o cliente da Pamela funciona com o backend real.
+
+**Em resumo:**  
+Mariana Luísa é a **“auditoria/controle de qualidade final”**.
+
+---
+
+### **Fluxo completo (bem simples)**
+
+1. Usuário usa o site da Pamela.  
+2. Pamela envia pedido pro servidor do Henrique.  
+3. Henrique manda o JSON pra Emilie validar.  
+4. Emilie aprova ou bloqueia.  
+5. Se aprovou → Henrique manda pra Homrich guardar/alterar.  
+6. Henrique responde pro site.  
+7. Pamela mostra na tela.  
+8. Mariana Luísa testa tudo isso pra garantir que tá certo.  
+
+---
+
 ## Decisões em comum do grupo
 
 Estas decisões foram escolhidas para facilitar a implementação e garantir compatibilidade entre módulos:
