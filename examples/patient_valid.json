@@ -1,0 +1,15 @@
+{
+  "resourceType": "Patient",
+  "active": true,
+  "name": [
+    { "text": "João da Silva" }
+  ],
+  "gender": "male",
+  "birthDate": "2001-09-15",
+  "telecom": [
+    { "system": "phone", "value": "+55 51 99999-9999" }
+  ],
+  "address": [
+    { "text": "Av. Principal, 123 - Porto Alegre/RS" }
+  ]
+}
